@@ -40,7 +40,7 @@ Hasil diusahakan agar serupa, berikut ini adalah gambaran hasil keluaran yang <b
 }
 ````
 
-Berikut ini bila gagal
+Berikut ini bila <b>gagal</b>
 
 ````markdown
 {
@@ -49,6 +49,17 @@ Berikut ini bila gagal
   "error": true,
   "message": "Nomor resi tidak ditemukan."
 }
+````
+
+<h3>Penggunaan:</h3>
+http(s)://domain_atau.ip/lokasi/skrip/pengiriman.php?kurir=(kurir)&resi=(resi)
+
+<h3>Jasa pengiriman yang saat ini sudah bisa digunakan:</h3>
+
+````markdown
+1. AnterAja
+2. JNE
+3. JNT
 ````
 
 <hr>
