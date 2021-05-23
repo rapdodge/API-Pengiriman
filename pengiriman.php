@@ -291,4 +291,97 @@ if ($Kurir == 'jne') {
 		$Hasil = array_merge($CekResi, $Keterangan, $Pengirim, $Penerima, $HasilRiwayat);
 		print_r(json_encode($Hasil));
 	}
+} elseif ($Kurir == 'sicepat') {
+	$curl = curl_init();
+
+	curl_setopt_array(
+		$curl,
+		array(
+			CURLOPT_URL => "http://api.sicepat.com/customer/waybill?waybill=$Resi",
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_ENCODING => "",
+			CURLOPT_MAXREDIRS => 10,
+			CURLOPT_TIMEOUT => 30,
+			CURLOPT_FOLLOWLOCATION => true,
+			CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+			CURLOPT_CUSTOMREQUEST => "GET",
+			CURLOPT_HTTPHEADER => array(
+				"api-key: 48cd408f0f2f2e3872ec81a958483cb0"
+			),
+		)
+	);
+
+	$ResponcURL = json_decode(curl_exec($curl), true);
+
+	curl_close($curl);
+
+	$CekResi = array();
+
+	if ($ResponcURL['sicepat']['status']['code'] != 200) {
+		$CekResi['name'] = 'SiCepat';
+		$CekResi['site'] = 'sicepat.com';
+		$CekResi['error'] = true;
+		$CekResi['message'] = 'Nomor resi tidak ditemukan.';
+		print_r(json_encode($CekResi));
+	} else {
+		$CekResi['name'] = 'SiCepat';
+		$CekResi['site'] = 'sicepat.com';
+		$CekResi['error'] = false;
+		$CekResi['message'] = 'success';
+
+		$Keterangan = array(
+			'info' => array(
+				'no_awb' => $ResponcURL['sicepat']['result']['waybill_number'],
+				'service' => $ResponcURL['sicepat']['result']['service'],
+				'status' => ' | ' . strtoupper($ResponcURL['sicepat']['result']['last_status']['status']),
+				'tanggal_kirim' => $ResponcURL['sicepat']['result']['send_date'],
+				'tanggal_terima' => $ResponcURL['sicepat']['result']['POD_receiver_time'],
+				'harga' => $ResponcURL['sicepat']['result']['totalprice'],
+				'berat' => $ResponcURL['sicepat']['result']['weight'],
+				'catatan' => null,
+			),
+		);
+
+		$Pengirim = array(
+			'pengirim' => array(
+				'nama' => $ResponcURL['sicepat']['result']['sender'],
+				'phone' => null,
+				'alamat' => $ResponcURL['sicepat']['result']['sender_address'],
+			),
+		);
+
+		$PecahPenerima0 = preg_split('/[\[\]]/', $ResponcURL['sicepat']['result']['last_status']['receiver_name']);
+		$PecahPenerima1 = explode(' - ', $PecahPenerima0[1]);
+
+		$Penerima = array(
+			'penerima' => array(
+				'nama' => $ResponcURL['sicepat']['result']['receiver_name'],
+				'nama_penerima' => $PecahPenerima1 = rtrim(reset($PecahPenerima1)),
+				'phone' => null,
+				'alamat' => $ResponcURL['sicepat']['result']['receiver_address'],
+			),
+		);
+
+		$Riwayat = array();
+		foreach ($ResponcURL['sicepat']['result']['track_history'] as $k => $v) {
+			$Riwayat[$k]['tanggal'] = date('d-m-Y H:i', strtotime($ResponcURL['sicepat']['result']['track_history'][$k]['date_time']));
+			if ($ResponcURL['sicepat']['result']['track_history'][$k]['status'] == 'DELIVERED') {
+				$Riwayat[$k]['posisi'] = 'Diterima';
+				$Riwayat[$k]['message'] = $ResponcURL['sicepat']['result']['track_history'][$k]['receiver_name'];
+			} else {
+				$Riwayat[$k]['posisi'] = preg_replace('/(.*)\[(.*)\](.*)/', '$2', $ResponcURL['sicepat']['result']['track_history'][$k]['city']);
+				if (strpos($ResponcURL['sicepat']['result']['track_history'][$k]['city'], 'SIGESIT') !== false) {
+					$Riwayat[$k]['posisi'] = 'Diantar';
+				}
+				$Riwayat[$k]['message'] = $ResponcURL['sicepat']['result']['track_history'][$k]['city'];
+			}
+		}
+
+		$HasilRiwayat = array(
+			'history' => $Riwayat,
+		);
+
+		$Hasil = array_merge($CekResi, $Keterangan, $Pengirim, $Penerima, $HasilRiwayat);
+		print_r(json_encode($Hasil));
+	}
 }
