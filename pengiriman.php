@@ -7,20 +7,23 @@ $Resi = $_GET['resi'];
 if ($Kurir == 'jne') {
 	$curl = curl_init();
 
-	curl_setopt_array($curl, array(
-	  CURLOPT_URL => "http://apiv2.jne.co.id:10101/tracing/api/list/myjne/cnote/$Resi",
-	  CURLOPT_RETURNTRANSFER => true,
-	  CURLOPT_ENCODING => "",
-	  CURLOPT_MAXREDIRS => 10,
-	  CURLOPT_TIMEOUT => 30,
-	  CURLOPT_FOLLOWLOCATION => true,
-	  CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-	  CURLOPT_CUSTOMREQUEST => "POST",
-	  CURLOPT_POSTFIELDS => "username=JNEONE&api_key=504fbae0d815bf3e73a7416be328fcf2",
-	  CURLOPT_HTTPHEADER => array(
-	    "Content-Type: application/x-www-form-urlencoded"
-	  ),
-	));
+	curl_setopt_array(
+		$curl,
+		array(
+			CURLOPT_URL => "http://apiv2.jne.co.id:10101/tracing/api/list/myjne/cnote/$Resi",
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_ENCODING => "",
+			CURLOPT_MAXREDIRS => 10,
+			CURLOPT_TIMEOUT => 30,
+			CURLOPT_FOLLOWLOCATION => true,
+			CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+			CURLOPT_CUSTOMREQUEST => "POST",
+			CURLOPT_POSTFIELDS => "username=JNEONE&api_key=504fbae0d815bf3e73a7416be328fcf2",
+			CURLOPT_HTTPHEADER => array(
+				"Content-Type: application/x-www-form-urlencoded"
+			),
+		)
+	);
 
 	$ResponcURL = json_decode(curl_exec($curl), true);
 
@@ -44,7 +47,7 @@ if ($Kurir == 'jne') {
 			'info' => array(
 				'no_awb' => $ResponcURL['cnote']['cnote_no'],
 				'service' => $ResponcURL['cnote']['cnote_services_code'],
-				'status' => ' | '.$ResponcURL['cnote']['pod_status'],
+				'status' => ' | ' . $ResponcURL['cnote']['pod_status'],
 				'tanggal_kirim' => date('d-m-Y H:i', strtotime($ResponcURL['cnote']['cnote_date'])),
 				'tanggal_terima' => date('d-m-Y H:i', strtotime($ResponcURL['cnote']['cnote_pod_date'])),
 				'harga' => $ResponcURL['cnote']['shippingcost'],
@@ -70,7 +73,6 @@ if ($Kurir == 'jne') {
 			),
 		);
 
-		$HitungRiwayat = count($ResponcURL['history']);
 		$Riwayat = array();
 		foreach ($ResponcURL['history'] as $k => $v) {
 			$Riwayat[$k]['tanggal'] = date('d-m-Y H:i', strtotime($ResponcURL['history'][$k]['date']));
@@ -84,7 +86,6 @@ if ($Kurir == 'jne') {
 				$Riwayat[$k]['posisi'] = strtoupper(rtrim(end($Pecah)));
 				$Riwayat[$k]['message'] = rtrim(str_replace(' AT', '', $PecahRiwayat[0]));
 			}
-			
 		}
 
 		$HasilRiwayat = array(
@@ -97,34 +98,36 @@ if ($Kurir == 'jne') {
 } elseif ($Kurir == 'anteraja') {
 	$curl = curl_init();
 
-	curl_setopt_array($curl, array(
-	  CURLOPT_URL => "https://api.anteraja.id/order/tracking",
-	  CURLOPT_RETURNTRANSFER => true,
-	  CURLOPT_ENCODING => "",
-	  CURLOPT_MAXREDIRS => 10,
-	  CURLOPT_TIMEOUT => 0,
-	  CURLOPT_FOLLOWLOCATION => true,
-	  CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-	  CURLOPT_CUSTOMREQUEST => "POST",
-	  CURLOPT_POSTFIELDS =>"[{\"codes\":\"$Resi\"}]",
-	  CURLOPT_HTTPHEADER => array(
-	    "mv: 1.2",
-	    "source: aca_android",
-	    "content-type: application/json; charset=UTF-8",
-	    "user-agent: okhttp/3.10.0",
-	  ),
-	));
+	curl_setopt_array(
+		$curl,
+		array(
+			CURLOPT_URL => "https://api.anteraja.id/order/tracking",
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_ENCODING => "",
+			CURLOPT_MAXREDIRS => 10,
+			CURLOPT_TIMEOUT => 30,
+			CURLOPT_FOLLOWLOCATION => true,
+			CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+			CURLOPT_CUSTOMREQUEST => "POST",
+			CURLOPT_POSTFIELDS => "[{\"codes\":\"$Resi\"}]",
+			CURLOPT_HTTPHEADER => array(
+				"mv: 1.2",
+				"source: aca_android",
+				"content-type: application/json; charset=UTF-8",
+				"user-agent: okhttp/3.10.0",
+			),
+		)
+	);
 
 	$ResponcURL = json_decode(curl_exec($curl), true);
 
 	curl_close($curl);
-	
+
 	if ($ResponcURL['content'][0]['detail']['final_status'] == 250) {
 		$StatusKirim = ' | DELIVERED';
 	} else {
 		$StatusKirim = ' | ON PROCESS';
 	}
-	
 
 	$CekResi = array();
 
@@ -171,7 +174,6 @@ if ($Kurir == 'jne') {
 		);
 
 		$BalikRiwayat = array_reverse($ResponcURL['content'][0]['history']);
-		$HitungRiwayat = count($BalikRiwayat);
 		$Riwayat = array();
 		foreach ($BalikRiwayat as $k => $v) {
 			$Riwayat[$k]['tanggal'] = date('d-m-Y H:i', strtotime($BalikRiwayat[$k]['timestamp']));
@@ -182,7 +184,104 @@ if ($Kurir == 'jne') {
 				$Riwayat[$k]['posisi'] = null;
 				$Riwayat[$k]['message'] = $BalikRiwayat[$k]['message']['id'];
 			}
-			
+		}
+
+		$HasilRiwayat = array(
+			'history' => $Riwayat,
+		);
+
+		$Hasil = array_merge($CekResi, $Keterangan, $Pengirim, $Penerima, $HasilRiwayat);
+		print_r(json_encode($Hasil));
+	}
+} elseif ($Kurir == 'jnt') {
+	$curl = curl_init();
+
+	curl_setopt_array(
+		$curl,
+		array(
+			CURLOPT_URL => "http://jk.jet.co.id:22234/jandt-app-ifd-web/router.do",
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_ENCODING => "",
+			CURLOPT_MAXREDIRS => 10,
+			CURLOPT_TIMEOUT => 30,
+			CURLOPT_FOLLOWLOCATION => true,
+			CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+			CURLOPT_CUSTOMREQUEST => "POST",
+			CURLOPT_POSTFIELDS => array(
+				'method' => 'order.massOrderTrack',
+				'format' => 'json',
+				'v' => '1.0',
+				'data' => "{\"parameter\":{\"billCodes\":\"$Resi\",\"lang\":\"en\"}}"
+			),
+		)
+	);
+
+	$ResponcURL = json_decode(curl_exec($curl), true);
+
+	curl_close($curl);
+
+	$DecodeData = json_decode($ResponcURL['data'], true);
+	$CekResi = array();
+
+	if ($DecodeData['bills'][0]['details'] == NULL) {
+		$CekResi['name'] = 'JNT';
+		$CekResi['site'] = 'jet.co.id';
+		$CekResi['error'] = true;
+		$CekResi['message'] = 'Nomor resi tidak ditemukan.';
+		print_r(json_encode($CekResi));
+	} else {
+		$CekResi['name'] = 'JNT';
+		$CekResi['site'] = 'jet.co.id';
+		$CekResi['error'] = false;
+		$CekResi['message'] = 'success';
+
+		$Keterangan = array(
+			'info' => array(
+				'no_awb' => $DecodeData['bills'][0]['billCode'],
+				'service' => null,
+				'status' => ' | ' . strtoupper($DecodeData['bills'][0]['status']),
+				'tanggal_kirim' => null,
+				'tanggal_terima' => null,
+				'harga' => null,
+				'berat' => null,
+				'catatan' => null,
+			),
+		);
+
+		$Pengirim = array(
+			'pengirim' => array(
+				'nama' => null,
+				'phone' => null,
+				'alamat' => null,
+			),
+		);
+
+		$Penerima = array(
+			'penerima' => array(
+				'nama' => null,
+				'nama_penerima' => null,
+				'phone' => null,
+				'alamat' => null,
+			),
+		);
+
+		$BalikRiwayat = array_reverse($DecodeData['bills'][0]['details']);
+		$Riwayat = array();
+		foreach ($BalikRiwayat as $k => $v) {
+			$Riwayat[$k]['tanggal'] = date('d-m-Y H:i', strtotime($BalikRiwayat[$k]['acceptTime']));
+			if ($BalikRiwayat[$k]['scanstatus'] == 'Delivered') {
+				$Riwayat[$k]['posisi'] = $BalikRiwayat[$k]['city'];
+				$Riwayat[$k]['message'] = 'DELIVERED';
+			} elseif ($BalikRiwayat[$k]['scanstatus'] == 'On Delivery') {
+				$Riwayat[$k]['posisi'] = $BalikRiwayat[$k]['city'];
+				$Riwayat[$k]['message'] = strtoupper($BalikRiwayat[$k]['scanstatus']);
+			} elseif ($BalikRiwayat[$k]['scanstatus'] == 'Departed') {
+				$Riwayat[$k]['posisi'] = $BalikRiwayat[$k]['city'];
+				$Riwayat[$k]['message'] = strtoupper($BalikRiwayat[$k]['scanstatus']);
+			} else {
+				$Riwayat[$k]['posisi'] = $BalikRiwayat[$k]['city'];
+				$Riwayat[$k]['message'] = strtoupper($BalikRiwayat[$k]['scanstatus']) . ' AT ' . strtoupper($BalikRiwayat[$k]['siteName']);
+			}
 		}
 
 		$HasilRiwayat = array(
