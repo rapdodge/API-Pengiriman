@@ -1,6 +1,58 @@
 # API-Pengiriman
 Repositori ini berisi skrip PHP Native untuk mempermudah mengecek resi pengiriman
 
+Hasil diusahakan agar serupa, berikut ini adalah gambaran hasil keluaran yang <b>berhasil</b>
+
+````markdown
+{
+  "name":
+  "site":
+  "error": false,
+  "message":
+  "info": {
+    "no_awb":
+    "service":
+    "status":
+    "tanggal_kirim":
+    "tanggal_terima":
+    "harga":
+    "berat":
+    "catatan":
+  },
+  "pengirim": {
+    "nama":
+    "phone":
+    "alamat":
+  },
+  "penerima": {
+    "nama":
+    "nama_penerima":
+    "phone":
+    "alamat":
+  },
+  "history": [
+    {
+      "tanggal":
+      "posisi":
+      "message":
+    }
+  ]
+}
+````
+
+Berikut ini bila gagal
+
+````markdown
+{
+  "name":
+  "site":
+  "error": true,
+  "message": "Nomor resi tidak ditemukan."
+}
+````
+
+<hr>
+
 Shield: [![CC BY-NC-SA 4.0][cc-by-nc-sa-shield]][cc-by-nc-sa]
 
 This work is licensed under a
