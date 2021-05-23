@@ -60,6 +60,7 @@ http(s)://domain_atau.ip/lokasi/skrip/pengiriman.php?kurir=(kurir)&resi=(resi)
 1. AnterAja
 2. JNE
 3. JNT
+4. SiCepat
 ````
 
 <hr>
