@@ -579,4 +579,97 @@ if ($Kurir == 'jne') {
 		$Hasil = array_merge($CekResi, $Keterangan, $Pengirim, $Penerima, $HasilRiwayat);
 		print_r(json_encode($Hasil));
 	}
+} elseif ($Kurir == 'wahana') {
+	$curl = curl_init();
+
+	curl_setopt_array(
+		$curl,
+		array(
+			CURLOPT_URL => "http://intranet.wahana.com/ci-oauth2/Api/trackingNew?access_token=093a64444fa19f591682f7087a5e5a08febd9e43&ttk=$Resi",
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_ENCODING => "",
+			CURLOPT_MAXREDIRS => 10,
+			CURLOPT_TIMEOUT => 30,
+			CURLOPT_FOLLOWLOCATION => true,
+			CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+			CURLOPT_CUSTOMREQUEST => 'GET'
+		)
+	);
+
+	$ResponcURL = json_decode(curl_exec($curl), true);
+
+	curl_close($curl);
+
+	$CekResi = array();
+
+	if ($ResponcURL['status'] != 'OK') {
+		$CekResi['name'] = 'WAHANA';
+		$CekResi['site'] = 'www.wahana.com';
+		$CekResi['error'] = true;
+		$CekResi['message'] = 'Nomor resi tidak ditemukan.';
+		print_r(json_encode($CekResi));
+	} else {
+		$CekResi['name'] = 'WAHANA';
+		$CekResi['site'] = 'www.wahana.com';
+		$CekResi['error'] = false;
+		$CekResi['message'] = 'success';
+
+		$Tgl_Kirim = reset($ResponcURL['data']);
+		$ArrayStatus = end($ResponcURL['data']);
+
+		if (strpos($ArrayStatus['StatusInternal'], 'Terkirim') !== false) {
+			$StatusKirim = ' | DELIVERED';
+		} else {
+			$StatusKirim = ' | ON PROCESS';
+		}
+
+		$Keterangan = array(
+			'info' => array(
+				'no_awb' => $ResponcURL['TTKNO'],
+				'service' => null,
+				'status' => $StatusKirim,
+				'tanggal_kirim' => date('d-m-Y H:i', strtotime($Tgl_Kirim['Tanggal'])),
+				'tanggal_terima' => null,
+				'harga' => null,
+				'berat' => null,
+				'catatan' => null,
+			),
+		);
+
+		$Pengirim = array(
+			'pengirim' => array(
+				'nama' => $ResponcURL['Pengirim'],
+				'phone' => null,
+				'alamat' => null,
+			),
+		);
+
+		$Penerima = array(
+			'penerima' => array(
+				'nama' => $ResponcURL['Penerima'],
+				'nama_penerima' => null,
+				'phone' => null,
+				'alamat' => $ResponcURL['Alamatpenerima'],
+			),
+		);
+
+		$Riwayat = array();
+		foreach ($ResponcURL['data'] as $k => $v) {
+			$Riwayat[$k]['tanggal'] = date('d-m-Y H:i', strtotime($ResponcURL['data'][$k]['Tanggal']));
+			if (strpos($ResponcURL['data'][$k]['StatusInternal'], 'Terkirim') !== false) {
+				$Riwayat[$k]['posisi'] = $ResponcURL['data'][$k]['lokasicd'];
+				$Riwayat[$k]['message'] = 'Diterima';
+			} else {
+				$Riwayat[$k]['posisi'] = $ResponcURL['data'][$k]['lokasicd'];
+				$Riwayat[$k]['message'] = $ResponcURL['data'][$k]['TrackStatusNama'];
+			}
+		}
+
+		$HasilRiwayat = array(
+			'history' => $Riwayat,
+		);
+
+		$Hasil = array_merge($CekResi, $Keterangan, $Pengirim, $Penerima, $HasilRiwayat);
+		print_r(json_encode($Hasil));
+	}
 }
