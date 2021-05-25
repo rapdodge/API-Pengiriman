@@ -79,11 +79,11 @@ if ($Kurir == 'jne') {
 			$PecahRiwayat = preg_split('/[\[\]]/', $ResponcURL['history'][$k]['desc']);
 			if (preg_match('/DELIVERED/', $ResponcURL['history'][$k]['desc'])) {
 				$Pecah = explode(' | ', $PecahRiwayat[1]);
-				$Riwayat[$k]['posisi'] = strtoupper(rtrim(end($Pecah)));
-				$Riwayat[$k]['message'] = 'DELIVERED';
+				$Riwayat[$k]['posisi'] = 'DITERIMA';
+				$Riwayat[$k]['message'] = $ResponcURL['history'][$k]['desc'];
 			} else {
 				$Pecah = explode(' | ', $PecahRiwayat[1]);
-				$Riwayat[$k]['posisi'] = strtoupper(rtrim(end($Pecah)));
+				$Riwayat[$k]['posisi'] = strtoupper(end($Pecah));
 				$Riwayat[$k]['message'] = rtrim(str_replace(' AT', '', $PecahRiwayat[0]));
 			}
 		}
@@ -178,8 +178,8 @@ if ($Kurir == 'jne') {
 		foreach ($BalikRiwayat as $k => $v) {
 			$Riwayat[$k]['tanggal'] = date('d-m-Y H:i', strtotime($BalikRiwayat[$k]['timestamp']));
 			if (preg_match('/Delivery sukses/', $BalikRiwayat[$k]['message']['id'])) {
-				$Riwayat[$k]['posisi'] = null;
-				$Riwayat[$k]['message'] = 'DELIVERED';
+				$Riwayat[$k]['posisi'] = 'Diterima';
+				$Riwayat[$k]['message'] = $BalikRiwayat[$k]['message']['id'];
 			} else {
 				$Riwayat[$k]['posisi'] = null;
 				$Riwayat[$k]['message'] = $BalikRiwayat[$k]['message']['id'];
@@ -235,12 +235,14 @@ if ($Kurir == 'jne') {
 		$CekResi['error'] = false;
 		$CekResi['message'] = 'success';
 
+		$Tgl_Kirim = end($DecodeData['bills'][0]['details']);
+
 		$Keterangan = array(
 			'info' => array(
 				'no_awb' => $DecodeData['bills'][0]['billCode'],
 				'service' => null,
 				'status' => ' | ' . strtoupper($DecodeData['bills'][0]['status']),
-				'tanggal_kirim' => null,
+				'tanggal_kirim' => date('d-m-Y H:i', strtotime($Tgl_Kirim['acceptTime'])),
 				'tanggal_terima' => null,
 				'harga' => null,
 				'berat' => null,
@@ -356,7 +358,7 @@ if ($Kurir == 'jne') {
 		$Penerima = array(
 			'penerima' => array(
 				'nama' => $ResponcURL['sicepat']['result']['receiver_name'],
-				'nama_penerima' => $PecahPenerima1 = rtrim(reset($PecahPenerima1)),
+				'nama_penerima' => reset($PecahPenerima1),
 				'phone' => null,
 				'alamat' => $ResponcURL['sicepat']['result']['receiver_address'],
 			),
@@ -374,6 +376,100 @@ if ($Kurir == 'jne') {
 					$Riwayat[$k]['posisi'] = 'Diantar';
 				}
 				$Riwayat[$k]['message'] = $ResponcURL['sicepat']['result']['track_history'][$k]['city'];
+			}
+		}
+
+		$HasilRiwayat = array(
+			'history' => $Riwayat,
+		);
+
+		$Hasil = array_merge($CekResi, $Keterangan, $Pengirim, $Penerima, $HasilRiwayat);
+		print_r(json_encode($Hasil));
+	}
+} elseif ($Kurir == 'spx') {
+	$curl = curl_init();
+
+	curl_setopt_array(
+		$curl,
+		array(
+			CURLOPT_URL => "https://spx.co.id/api/v2/fleet_order/tracking/search?sls_tracking_number=$Resi",
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_ENCODING => "",
+			CURLOPT_MAXREDIRS => 10,
+			CURLOPT_TIMEOUT => 30,
+			CURLOPT_FOLLOWLOCATION => true,
+			CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+			CURLOPT_CUSTOMREQUEST => "GET",
+			CURLOPT_HTTPHEADER => array(
+				"cookie: fms_language=id"
+			),
+		)
+	);
+
+	$ResponcURL = json_decode(curl_exec($curl), true);
+
+	curl_close($curl);
+
+	$CekResi = array();
+
+	if ($ResponcURL['message'] != 'Success') {
+		$CekResi['name'] = 'ShopeeXpress';
+		$CekResi['site'] = 'spx.co.id';
+		$CekResi['error'] = true;
+		$CekResi['message'] = 'Nomor resi tidak ditemukan.';
+		print_r(json_encode($CekResi));
+	} else {
+		$CekResi['name'] = 'ShopeeXpress';
+		$CekResi['site'] = 'spx.co.id';
+		$CekResi['error'] = false;
+		$CekResi['message'] = 'success';
+
+		$Tgl_Kirim = reset($ResponcURL['data']['tracking_list']);
+
+		$Keterangan = array(
+			'info' => array(
+				'no_awb' => $ResponcURL['data']['sls_tracking_number'],
+				'service' => null,
+				'status' => ' | ' . strtoupper($ResponcURL['data']['current_status']),
+				'tanggal_kirim' => date('d-m-Y H:i', $Tgl_Kirim['timestamp']),
+				'tanggal_terima' => null,
+				'harga' => null,
+				'berat' => null,
+				'catatan' => null,
+			),
+		);
+
+		$Pengirim = array(
+			'pengirim' => array(
+				'nama' => null,
+				'phone' => null,
+				'alamat' => null,
+			),
+		);
+
+		$Penerima = array(
+			'penerima' => array(
+				'nama' => $ResponcURL['data']['recipient_name'],
+				'nama_penerima' => null,
+				'phone' => null,
+				'alamat' => null,
+			),
+		);
+
+		$BalikRiwayat = array_reverse($ResponcURL['data']['tracking_list']);
+		$Riwayat = array();
+		foreach ($BalikRiwayat as $k => $v) {
+			$Riwayat[$k]['tanggal'] = date('d-m-Y H:i', $BalikRiwayat[$k]['timestamp']);
+			$PecahRiwayat = preg_split('/[\[\]]/', $BalikRiwayat[$k]['message']);
+			if ($BalikRiwayat[$k]['status'] == 'Delivered') {
+				$Riwayat[$k]['posisi'] = 'Diterima';
+				$Riwayat[$k]['message'] = $PecahRiwayat[2];
+			} elseif ($BalikRiwayat[$k]['message'] == 'Nomor Resi Pengiriman telah dibuat') {
+				$Riwayat[$k]['posisi'] = null;
+				$Riwayat[$k]['message'] = $BalikRiwayat[$k]['message'];
+			} else {
+				$Riwayat[$k]['posisi'] = preg_replace('/(.*)\[(.*)\](.*)/', '$2', $BalikRiwayat[$k]['message']);
+				$Riwayat[$k]['message'] = $PecahRiwayat[2];
 			}
 		}
 
