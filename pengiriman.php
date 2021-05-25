@@ -469,7 +469,106 @@ if ($Kurir == 'jne') {
 				$Riwayat[$k]['message'] = $BalikRiwayat[$k]['message'];
 			} else {
 				$Riwayat[$k]['posisi'] = preg_replace('/(.*)\[(.*)\](.*)/', '$2', $BalikRiwayat[$k]['message']);
-				$Riwayat[$k]['message'] = $PecahRiwayat[2];
+				$Riwayat[$k]['message'] = trim($PecahRiwayat[2], 'ke');
+			}
+		}
+
+		$HasilRiwayat = array(
+			'history' => $Riwayat,
+		);
+
+		$Hasil = array_merge($CekResi, $Keterangan, $Pengirim, $Penerima, $HasilRiwayat);
+		print_r(json_encode($Hasil));
+	}
+} elseif ($Kurir == 'jx') {
+	$curl = curl_init();
+
+	curl_setopt_array(
+		$curl,
+		array(
+			CURLOPT_URL => "https://www.j-express.id/api/a_tracking",
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_ENCODING => "",
+			CURLOPT_MAXREDIRS => 10,
+			CURLOPT_TIMEOUT => 30,
+			CURLOPT_FOLLOWLOCATION => true,
+			CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+			CURLOPT_CUSTOMREQUEST => 'POST',
+			CURLOPT_POSTFIELDS => '_token=0&code=1012668947',
+			CURLOPT_HTTPHEADER => array(
+				'Content-Type: application/x-www-form-urlencoded; charset=UTF-8',
+				'Cookie: _token=0; ci_session=0; _token=282e385954029c985329489b833e3096; ci_session=htqrg3nagdckge43f6tr1do8batqlig3'
+			),
+		)
+	);
+
+	$ResponcURL = json_decode(curl_exec($curl), true);
+
+	curl_close($curl);
+
+	$CekResi = array();
+
+	if ($ResponcURL['status'] != 'success') {
+		$CekResi['name'] = 'JX';
+		$CekResi['site'] = 'j-express.id';
+		$CekResi['error'] = true;
+		$CekResi['message'] = 'Nomor resi tidak ditemukan.';
+		print_r(json_encode($CekResi));
+	} else {
+		$CekResi['name'] = 'JX';
+		$CekResi['site'] = 'j-express.id';
+		$CekResi['error'] = false;
+		$CekResi['message'] = 'success';
+
+		$Tgl_Kirim = end($ResponcURL['track']);
+		$ArrayStatus = reset($ResponcURL['track']);
+
+		if (strpos($ArrayStatus['state'], 'Pengiriman telah berhasil') !== false) {
+			$StatusKirim = ' | DELIVERED';
+		} else {
+			$StatusKirim = ' | ON PROCESS';
+		}
+
+		$Keterangan = array(
+			'info' => array(
+				'no_awb' => $Resi,
+				'service' => null,
+				'status' => $StatusKirim,
+				'tanggal_kirim' => date('d-m-Y H:i', strtotime($Tgl_Kirim['times'])),
+				'tanggal_terima' => null,
+				'harga' => null,
+				'berat' => null,
+				'catatan' => null,
+			),
+		);
+
+		$Pengirim = array(
+			'pengirim' => array(
+				'nama' => null,
+				'phone' => null,
+				'alamat' => null,
+			),
+		);
+
+		$Penerima = array(
+			'penerima' => array(
+				'nama' => null,
+				'nama_penerima' => null,
+				'phone' => null,
+				'alamat' => null,
+			),
+		);
+
+		$BalikRiwayat = array_reverse($ResponcURL['track']);
+		$Riwayat = array();
+		foreach ($BalikRiwayat as $k => $v) {
+			$Riwayat[$k]['tanggal'] = date('d-m-Y H:i', strtotime($BalikRiwayat[$k]['times']));
+			if (strpos($ArrayStatus['state'], 'Pengiriman telah berhasil') !== false) {
+				$Riwayat[$k]['posisi'] = null;
+				$Riwayat[$k]['message'] = $BalikRiwayat[$k]['state'];
+			} else {
+				$Riwayat[$k]['posisi'] = null;
+				$Riwayat[$k]['message'] = $BalikRiwayat[$k]['state'];
 			}
 		}
 
