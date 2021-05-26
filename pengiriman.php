@@ -4,7 +4,26 @@ error_reporting(0);
 $Kurir = strtolower($_GET['kurir']);
 $Resi = $_GET['resi'];
 
-if ($Kurir == 'jne') {
+if ($Kurir == null && $Resi == null) {
+	$CekResi = array();
+	$CekResi['name'] = null;
+	$CekResi['site'] = null;
+	$CekResi['error'] = true;
+	$CekResi['message'] = 'Anda belum memasukkan jasa pengiriman & resi!';
+	print_r(json_encode($CekResi));
+} elseif ($Kurir == null) {
+	$CekResi = array();
+	$CekResi['name'] = null;
+	$CekResi['site'] = null;
+	$CekResi['error'] = true;
+	$CekResi['message'] = 'Anda hanya memasukkan jasa pengiriman saja, mohon tambahkan resi!';
+} elseif ($Resi == null) {
+	$CekResi = array();
+	$CekResi['name'] = null;
+	$CekResi['site'] = null;
+	$CekResi['error'] = true;
+	$CekResi['message'] = 'Anda hanya memasukkan resi saja, mohon tambahkan jasa pengiriman!';
+} elseif ($Kurir == 'jne') {
 	$curl = curl_init();
 
 	curl_setopt_array(
