@@ -114,7 +114,7 @@ if ($Kurir == 'jne') {
 				"mv: 1.2",
 				"source: aca_android",
 				"content-type: application/json; charset=UTF-8",
-				"user-agent: okhttp/3.10.0",
+				"user-agent: okhttp/3.10.0"
 			),
 		)
 	);
@@ -208,10 +208,10 @@ if ($Kurir == 'jne') {
 			CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
 			CURLOPT_CUSTOMREQUEST => "POST",
 			CURLOPT_POSTFIELDS => array(
-				'method' => 'order.massOrderTrack',
-				'format' => 'json',
-				'v' => '1.0',
-				'data' => "{\"parameter\":{\"billCodes\":\"$Resi\",\"lang\":\"en\"}}"
+				"method" => "order.massOrderTrack",
+				"format" => "json",
+				"v" => "1.0",
+				"data" => "{\"parameter\":{\"billCodes\":\"$Resi\",\"lang\":\"en\"}}"
 			),
 		)
 	);
@@ -221,6 +221,14 @@ if ($Kurir == 'jne') {
 	curl_close($curl);
 
 	$DecodeData = json_decode($ResponcURL['data'], true);
+	$Tgl_Terima = reset($DecodeData['bills'][0]['details']);
+
+	if ($Tgl_Terima['scanstatus'] == 'Delivered') {
+		$TanggalTerima = $Tgl_Terima['acceptTime'];
+	} else {
+		$TanggalTerima = null;
+	}
+
 	$CekResi = array();
 
 	if ($DecodeData['bills'][0]['details'] == NULL) {
@@ -243,7 +251,7 @@ if ($Kurir == 'jne') {
 				'service' => null,
 				'status' => ' | ' . strtoupper($DecodeData['bills'][0]['status']),
 				'tanggal_kirim' => date('d-m-Y H:i', strtotime($Tgl_Kirim['acceptTime'])),
-				'tanggal_terima' => null,
+				'tanggal_terima' => date('d-m-Y H:i', strtotime($TanggalTerima)),
 				'harga' => null,
 				'berat' => null,
 				'catatan' => null,
@@ -410,6 +418,14 @@ if ($Kurir == 'jne') {
 
 	curl_close($curl);
 
+	$Tgl_Terima = reset($ResponcURL['data']['tracking_list']);
+
+	if ($Tgl_Terima['status'] == 'Delivered') {
+		$TanggalTerima = $Tgl_Terima['timestamp'];
+	} else {
+		$TanggalTerima = null;
+	}
+
 	$CekResi = array();
 
 	if ($ResponcURL['message'] != 'Success') {
@@ -424,7 +440,7 @@ if ($Kurir == 'jne') {
 		$CekResi['error'] = false;
 		$CekResi['message'] = 'success';
 
-		$Tgl_Kirim = reset($ResponcURL['data']['tracking_list']);
+		$Tgl_Kirim = end($ResponcURL['data']['tracking_list']);
 
 		$Keterangan = array(
 			'info' => array(
@@ -432,7 +448,7 @@ if ($Kurir == 'jne') {
 				'service' => null,
 				'status' => ' | ' . strtoupper($ResponcURL['data']['current_status']),
 				'tanggal_kirim' => date('d-m-Y H:i', $Tgl_Kirim['timestamp']),
-				'tanggal_terima' => null,
+				'tanggal_terima' => date('d-m-Y H:i', $TanggalTerima),
 				'harga' => null,
 				'berat' => null,
 				'catatan' => null,
@@ -493,11 +509,11 @@ if ($Kurir == 'jne') {
 			CURLOPT_TIMEOUT => 30,
 			CURLOPT_FOLLOWLOCATION => true,
 			CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-			CURLOPT_CUSTOMREQUEST => 'POST',
-			CURLOPT_POSTFIELDS => '_token=0&code=1012668947',
+			CURLOPT_CUSTOMREQUEST => "POST",
+			CURLOPT_POSTFIELDS => "_token=0&code=$Resi",
 			CURLOPT_HTTPHEADER => array(
-				'Content-Type: application/x-www-form-urlencoded; charset=UTF-8',
-				'Cookie: _token=0; ci_session=0; _token=282e385954029c985329489b833e3096; ci_session=htqrg3nagdckge43f6tr1do8batqlig3'
+				"Content-Type: application/x-www-form-urlencoded; charset=UTF-8",
+				"Cookie: _token=0; ci_session=0; _token=282e385954029c985329489b833e3096; ci_session=htqrg3nagdckge43f6tr1do8batqlig3"
 			),
 		)
 	);
@@ -525,8 +541,10 @@ if ($Kurir == 'jne') {
 
 		if (strpos($ArrayStatus['state'], 'Pengiriman telah berhasil') !== false) {
 			$StatusKirim = ' | DELIVERED';
+			$TanggalTerima = $ArrayStatus['times'];
 		} else {
 			$StatusKirim = ' | ON PROCESS';
+			$TanggalTerima = null;
 		}
 
 		$Keterangan = array(
@@ -535,7 +553,7 @@ if ($Kurir == 'jne') {
 				'service' => null,
 				'status' => $StatusKirim,
 				'tanggal_kirim' => date('d-m-Y H:i', strtotime($Tgl_Kirim['times'])),
-				'tanggal_terima' => null,
+				'tanggal_terima' => date('d-m-Y H:i', strtotime($TanggalTerima)),
 				'harga' => null,
 				'berat' => null,
 				'catatan' => null,
@@ -592,7 +610,7 @@ if ($Kurir == 'jne') {
 			CURLOPT_TIMEOUT => 30,
 			CURLOPT_FOLLOWLOCATION => true,
 			CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-			CURLOPT_CUSTOMREQUEST => 'GET'
+			CURLOPT_CUSTOMREQUEST => "GET"
 		)
 	);
 
@@ -619,8 +637,10 @@ if ($Kurir == 'jne') {
 
 		if (strpos($ArrayStatus['StatusInternal'], 'Terkirim') !== false) {
 			$StatusKirim = ' | DELIVERED';
+			$TanggalTerima = $ArrayStatus['Tanggal'];
 		} else {
 			$StatusKirim = ' | ON PROCESS';
+			$TanggalTerima = null;
 		}
 
 		$Keterangan = array(
@@ -629,7 +649,7 @@ if ($Kurir == 'jne') {
 				'service' => null,
 				'status' => $StatusKirim,
 				'tanggal_kirim' => date('d-m-Y H:i', strtotime($Tgl_Kirim['Tanggal'])),
-				'tanggal_terima' => null,
+				'tanggal_terima' => date('d-m-Y H:i', strtotime($TanggalTerima)),
 				'harga' => null,
 				'berat' => null,
 				'catatan' => null,
@@ -662,6 +682,151 @@ if ($Kurir == 'jne') {
 			} else {
 				$Riwayat[$k]['posisi'] = $ResponcURL['data'][$k]['lokasicd'];
 				$Riwayat[$k]['message'] = $ResponcURL['data'][$k]['TrackStatusNama'];
+			}
+		}
+
+		$HasilRiwayat = array(
+			'history' => $Riwayat,
+		);
+
+		$Hasil = array_merge($CekResi, $Keterangan, $Pengirim, $Penerima, $HasilRiwayat);
+		print_r(json_encode($Hasil));
+	}
+} elseif ($Kurir == 'pos') {
+	$curl = curl_init();
+
+	curl_setopt_array(
+		$curl,
+		array(
+			CURLOPT_URL => "https://order.posindonesia.co.id/api/lacak",
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_ENCODING => "",
+			CURLOPT_MAXREDIRS => 10,
+			CURLOPT_TIMEOUT => 30,
+			CURLOPT_FOLLOWLOCATION => true,
+			CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+			CURLOPT_CUSTOMREQUEST => "POST",
+			CURLOPT_POSTFIELDS => "{\"barcode\":\"$Resi\"}",
+			CURLOPT_HTTPHEADER => array(
+				'content-type: application/json'
+			),
+		)
+	);
+
+	$ResponcURL = json_decode(curl_exec($curl), true);
+
+	curl_close($curl);
+
+	$CekResi = array();
+
+	if ($ResponcURL['errors']['global'] == 'Data dengan barcode tersebut tidak ditemukan') {
+		$CekResi['name'] = 'Pos Indonesia';
+		$CekResi['site'] = 'www.posindonesia.co.id';
+		$CekResi['error'] = true;
+		$CekResi['message'] = 'Nomor resi tidak ditemukan.';
+		print_r(json_encode($CekResi));
+	} else {
+		$CekResi['name'] = 'Pos Indonesia';
+		$CekResi['site'] = 'www.posindonesia.co.id';
+		$CekResi['error'] = false;
+		$CekResi['message'] = 'success';
+
+		$Tgl_Kirim = reset($ResponcURL['result']);
+		$ArrayStatus = end($ResponcURL['result']);
+
+		if (strpos($ArrayStatus['description'], 'Diterima') !== false) {
+			$StatusKirim = ' | DELIVERED';
+			$TanggalTerima = $ArrayStatus['eventDate'];
+			$NmPenerima = $ArrayStatus['description'];
+			$NamaPenerima = preg_replace('/(.*)PENERIMA \/ KETERANGAN : (.*)/', '$2', $NmPenerima);
+		} else {
+			$StatusKirim = ' | ON PROCESS';
+			$TanggalTerima = null;
+			$NamaPenerima = null;
+		}
+
+		$LedakInfo = explode(';', $Tgl_Kirim['description']);
+
+		$Keterangan = array(
+			'info' => array(
+				'no_awb' => $Resi,
+				'service' => preg_replace('/(.*)LAYANAN :(.*)/', '$2', $LedakInfo[0]),
+				'status' => $StatusKirim,
+				'tanggal_kirim' => date('d-m-Y H:i', strtotime($Tgl_Kirim['eventDate'])),
+				'tanggal_terima' => date('d-m-Y H:i', strtotime($TanggalTerima)),
+				'harga' => null,
+				'berat' => null,
+				'catatan' => null,
+			),
+		);
+
+		$Pengirim = array(
+			'pengirim' => array(
+				'nama' => preg_replace('/(.*)PENGIRIM : (.*)/', '$2', $LedakInfo[1]),
+				'phone' => $LedakInfo[3],
+				'alamat' => $LedakInfo[2] . ', ' . $LedakInfo[4],
+			),
+		);
+
+		$Penerima = array(
+			'penerima' => array(
+				'nama' => preg_replace('/(.*)PENERIMA : (.*)/', '$2', $LedakInfo[7]),
+				'nama_penerima' => $NamaPenerima,
+				'phone' => $LedakInfo[9],
+				'alamat' => $LedakInfo[8] . ', ' . $LedakInfo[10],
+			),
+		);
+
+		$Riwayat = array();
+		foreach ($ResponcURL['result'] as $k => $v) {
+			switch ($ResponcURL['result'][$k]['eventName']) {
+				case 'POSTING LOKET':
+					$Riwayat[$k] = [
+						'tanggal' => date('d-m-Y H:i', strtotime($ResponcURL['result'][$k]['eventDate'])),
+						'posisi' => $ResponcURL['result'][$k]['officeName'],
+						'message' => 'Penerimaan di loket ' . $ResponcURL['result'][$k]['officeName'],
+					];
+					break;
+
+				case 'MANIFEST SERAH':
+					$Riwayat[$k] = [
+						'tanggal' => date('d-m-Y H:i', strtotime($ResponcURL['result'][$k]['eventDate'])),
+						'posisi' => $ResponcURL['result'][$k]['officeName'],
+						'message' => 'Diteruskan ke Hub ' . preg_replace('/(.*)KANTOR TUJUAN : (.*)/', '$2', $ResponcURL['result'][$k]['description']),
+					];
+					break;
+
+				case 'MANIFEST TERIMA':
+					$Riwayat[$k] = [
+						'tanggal' => date('d-m-Y H:i', strtotime($ResponcURL['result'][$k]['eventDate'])),
+						'posisi' => $ResponcURL['result'][$k]['officeName'],
+						'message' => 'Tiba di Hub ' . $ResponcURL['result'][$k]['officeName'],
+					];
+					break;
+
+				case 'PROSES ANTAR':
+					$Riwayat[$k] = [
+						'tanggal' => date('d-m-Y H:i', strtotime($ResponcURL['result'][$k]['eventDate'])),
+						'posisi' => $ResponcURL['result'][$k]['officeName'],
+						'message' => 'Proses antar di ' . $ResponcURL['result'][$k]['officeName'],
+					];
+					break;
+
+				case 'SELESAI ANTAR':
+					if (strpos('Antar Ulang', $ResponcURL['result'][$k]['description']) !== false) {
+						$StatusAntar = 'Gagal antar - (';
+						$StatusAntar .= preg_replace('/(.*)KETERANGAN : (.*)/', '$2', $ResponcURL['result'][$k]['description']) . ')';
+					} else {
+						$NamaPenerima = preg_replace('/(.*)PENERIMA \/ KETERANGAN : (.*)/', '$2', $ResponcURL['result'][$k]['description']);
+						$StatusAntar = 'Selesai antar. (';
+						$StatusAntar .= $NamaPenerima . ')';
+					}
+					$Riwayat[$k] = [
+						'tanggal' => date('d-m-Y H:i', strtotime($ResponcURL['result'][$k]['eventDate'])),
+						'posisi' => $ResponcURL['result'][$k]['officeName'],
+						'message' => $StatusAntar
+					];
+					break;
 			}
 		}
 
