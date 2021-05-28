@@ -142,6 +142,16 @@ if ($Kurir == null && $Resi == null) {
 
 	curl_close($curl);
 
+	$Tgl_Kirim = end($ResponcURL['content'][0]['history']);
+	$TanggalKirim = date('d-m-Y H:i', strtotime($Tgl_Kirim['timestamp']));
+
+	$Tgl_Terima = reset($ResponcURL['content'][0]['history']);
+	if (strpos($Tgl_Terima['message']['id'], 'Delivery sukses') !== false) {
+		$TanggalTerima = date('d-m-Y H:i', strtotime($Tgl_Terima['timestamp']));
+	} else {
+		$TanggalTerima = 'null';
+	}
+
 	if ($ResponcURL['content'][0]['detail']['final_status'] == 250) {
 		$StatusKirim = ' | DELIVERED';
 	} else {
@@ -167,8 +177,8 @@ if ($Kurir == null && $Resi == null) {
 				'no_awb' => $ResponcURL['content'][0]['awb'],
 				'service' => $ResponcURL['content'][0]['detail']['service_code'],
 				'status' => $StatusKirim,
-				'tanggal_kirim' => date('d-m-Y H:i', strtotime($ResponcURL['content'][0]['detail']['shipped_date'])),
-				'tanggal_terima' => date('d-m-Y H:i', strtotime($ResponcURL['content'][0]['detail']['delivered_date'])),
+				'tanggal_kirim' => $TanggalKirim,
+				'tanggal_terima' => $TanggalTerima,
 				'harga' => $ResponcURL['content'][0]['detail']['actual_amount'],
 				'berat' => $ResponcURL['content'][0]['detail']['weight'],
 				'catatan' => $ResponcURL['content'][0]['items'][0]['name'],
@@ -846,6 +856,114 @@ if ($Kurir == null && $Resi == null) {
 						'message' => $StatusAntar
 					];
 					break;
+			}
+		}
+
+		$HasilRiwayat = array(
+			'history' => $Riwayat,
+		);
+
+		$Hasil = array_merge($CekResi, $Keterangan, $Pengirim, $Penerima, $HasilRiwayat);
+		print_r(json_encode($Hasil));
+	}
+} elseif ($Kurir == 'ninja') {
+	$curl = curl_init();
+
+	curl_setopt_array(
+		$curl,
+		array(
+			CURLOPT_URL => "https://api.ninjavan.co/id/shipperpanel/app/tracking?id=$Resi",
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_ENCODING => "",
+			CURLOPT_MAXREDIRS => 10,
+			CURLOPT_TIMEOUT => 30,
+			CURLOPT_FOLLOWLOCATION => true,
+			CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+			CURLOPT_CUSTOMREQUEST => "GET",
+			CURLOPT_HTTPHEADER => array(
+				"User-Agent: okhttp/3.4.1"
+			),
+		)
+	);
+
+	$ResponcURL = json_decode(curl_exec($curl), true);
+
+	curl_close($curl);
+
+	$Tgl_Kirim = reset($ResponcURL['orders'][0]['events']);
+	$TanggalKirim = $Tgl_Kirim['time'] / 1000;
+
+	if ($ResponcURL['orders'][0]['status'] == 'Completed') {
+		$StatusKirim = ' | DELIVERED';
+	} else {
+		$StatusKirim = ' | ' . strtoupper($ResponcURL['orders'][0]['status']);
+	}
+
+	$Tgl_Terima = end($ResponcURL['orders'][0]['events']);
+	if (strpos($Tgl_Terima['description'], 'berhasil dikirimkan') !== false) {
+		$TanggalTerima = $Tgl_Terima['time'] / 1000;
+	} else {
+		$TanggalTerima = 'null';
+	}
+
+	$CekResi = array();
+
+	if ($ResponcURL == null) {
+		$CekResi['name'] = 'NinjaXpress';
+		$CekResi['site'] = 'www.ninjaxpress.co';
+		$CekResi['error'] = true;
+		$CekResi['message'] = 'Nomor resi tidak ditemukan.';
+		print_r(json_encode($CekResi));
+	} else {
+		$CekResi['name'] = 'NinjaXpress';
+		$CekResi['site'] = 'www.ninjaxpress.co';
+		$CekResi['error'] = false;
+		$CekResi['message'] = 'success';
+
+		$Keterangan = array(
+			'info' => array(
+				'no_awb' => $ResponcURL['orders'][0]['tracking_id'],
+				'service' => $ResponcURL['orders'][0]['service_type'],
+				'status' => $StatusKirim,
+				'tanggal_kirim' => date('d-m-Y H:i', $TanggalKirim),
+				'tanggal_terima' => date('d-m-Y H:i', $TanggalTerima),
+				'harga' => null,
+				'berat' => null,
+				'catatan' => null,
+			),
+		);
+
+		$Pengirim = array(
+			'pengirim' => array(
+				'nama' => $ResponcURL['orders'][0]['from_name'],
+				'phone' => null,
+				'alamat' => null,
+			),
+		);
+
+		$Penerima = array(
+			'penerima' => array(
+				'nama' => null,
+				'nama_penerima' => $ResponcURL['orders'][0]['transactions'][1]['signature']['name'],
+				'phone' => null,
+				'alamat' => $ResponcURL['orders'][0]['to_city'],
+			),
+		);
+
+		$Riwayat = array();
+		foreach ($ResponcURL['orders'][0]['events'] as $k => $v) {
+			$Riwayat[$k]['tanggal'] = date('d-m-Y H:i', $ResponcURL['orders'][0]['events'][$k]['time'] / 1000);
+			$PecahRiwayat = preg_split('/[\[\]]/', $ResponcURL['orders'][0]['events'][$k]['description']);
+			if (strpos($ResponcURL['orders'][0]['events'][$k]['description'], 'berhasil dikirimkan') !== false) {
+				$Riwayat[$k]['posisi'] = 'DITERIMA';
+				$Riwayat[$k]['message'] = $ResponcURL['orders'][0]['events'][$k]['description'];
+			} elseif (strpos($ResponcURL['orders'][0]['events'][$k]['description'], ' - ') !== false) {
+				$Pecah = explode(' | ', $PecahRiwayat[1]);
+				$Riwayat[$k]['posisi'] = preg_replace('/(.*) - (.*)/', '$2', $ResponcURL['orders'][0]['events'][$k]['description']);
+				$Riwayat[$k]['message'] = rtrim(str_replace(' AT', '', $PecahRiwayat[0]));
+			} else {
+				$Riwayat[$k]['posisi'] = null;
+				$Riwayat[$k]['message'] = $ResponcURL['orders'][0]['events'][$k]['description'];
 			}
 		}
 
