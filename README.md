@@ -65,6 +65,7 @@ http(s)://domain_atau.ip/lokasi/skrip/pengiriman.php?kurir=(kurir)&resi=(resi)
 6. J-Express
 7. WAHANA
 8. Pos Indonesia
+9. NinjaXpress
 ````
 
 <hr>
