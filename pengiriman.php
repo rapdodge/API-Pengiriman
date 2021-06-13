@@ -1,6 +1,7 @@
 <?php
 date_default_timezone_set('Asia/Jakarta');
 error_reporting(0);
+header('Content-Type: application/json');
 $Kurir = strtolower($_GET['kurir']);
 $Resi = $_GET['resi'];
 
