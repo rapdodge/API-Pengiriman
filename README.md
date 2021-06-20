@@ -63,9 +63,8 @@ http(s)://domain_atau.ip/lokasi/skrip/pengiriman.php?kurir=(kurir)&resi=(resi)
 4. JNT | jnt
 5. NinjaXpress | ninja
 6. Pos Indonesia | pos
-7. ShopeeXpress | spx
-8. SiCepat | sicepat
-9. WAHANA | wahana
+7. SiCepat | sicepat
+8. WAHANA | wahana
 
 Selanjutnya: LionParcel [?], TIKI [?]
 ````
