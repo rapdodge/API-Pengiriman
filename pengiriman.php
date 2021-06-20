@@ -975,4 +975,11 @@ if ($Kurir == null && $Resi == null) {
 		$Hasil = array_merge($CekResi, $Keterangan, $Pengirim, $Penerima, $HasilRiwayat);
 		print_r(json_encode($Hasil));
 	}
+} else {
+	$CekResi = array();
+	$CekResi['name'] = null;
+	$CekResi['site'] = null;
+	$CekResi['error'] = true;
+	$CekResi['message'] = 'Jasa pengiriman belum didukung!';
+	print_r(json_encode($CekResi));
 }
