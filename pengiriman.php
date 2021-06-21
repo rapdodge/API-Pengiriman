@@ -2,6 +2,7 @@
 date_default_timezone_set('Asia/Jakarta');
 error_reporting(0);
 header('Content-Type: application/json');
+$JasaPengiriman = array('anteraja', 'jx', 'jne', 'jnt', 'ninja', 'pos', 'sicepat', 'wahana');
 $Kurir = strtolower($_GET['kurir']);
 $Resi = $_GET['resi'];
 
@@ -12,18 +13,20 @@ if ($Kurir == null && $Resi == null) {
 	$CekResi['error'] = true;
 	$CekResi['message'] = 'Anda belum memasukkan jasa pengiriman & resi!';
 	print_r(json_encode($CekResi));
-} elseif ($Kurir == null) {
-	$CekResi = array();
-	$CekResi['name'] = null;
-	$CekResi['site'] = null;
-	$CekResi['error'] = true;
-	$CekResi['message'] = 'Anda hanya memasukkan jasa pengiriman saja, mohon tambahkan resi!';
-} elseif ($Resi == null) {
+} elseif ($Kurir == null && $Resi != null) {
 	$CekResi = array();
 	$CekResi['name'] = null;
 	$CekResi['site'] = null;
 	$CekResi['error'] = true;
 	$CekResi['message'] = 'Anda hanya memasukkan resi saja, mohon tambahkan jasa pengiriman!';
+	print_r(json_encode($CekResi));
+} elseif (in_array($Kurir, $JasaPengiriman) && $Resi == null) {
+	$CekResi = array();
+	$CekResi['name'] = null;
+	$CekResi['site'] = null;
+	$CekResi['error'] = true;
+	$CekResi['message'] = 'Anda hanya memasukkan jasa pengiriman saja, mohon tambahkan resi!';
+	print_r(json_encode($CekResi));
 } elseif ($Kurir == 'jne') {
 	$curl = curl_init();
 
@@ -67,7 +70,7 @@ if ($Kurir == null && $Resi == null) {
 			'info' => array(
 				'no_awb' => $ResponcURL['cnote']['cnote_no'],
 				'service' => $ResponcURL['cnote']['cnote_services_code'],
-				'status' => ' | ' . $ResponcURL['cnote']['pod_status'],
+				'status' => $ResponcURL['cnote']['pod_status'],
 				'tanggal_kirim' => date('d-m-Y H:i', strtotime($ResponcURL['cnote']['cnote_date'])),
 				'tanggal_terima' => date('d-m-Y H:i', strtotime($ResponcURL['cnote']['cnote_pod_date'])),
 				'harga' => $ResponcURL['cnote']['shippingcost'],
@@ -154,9 +157,9 @@ if ($Kurir == null && $Resi == null) {
 	}
 
 	if ($ResponcURL['content'][0]['detail']['final_status'] == 250) {
-		$StatusKirim = ' | DELIVERED';
+		$StatusKirim = 'DELIVERED';
 	} else {
-		$StatusKirim = ' | ON PROCESS';
+		$StatusKirim = 'ON PROCESS';
 	}
 
 	$CekResi = array();
@@ -279,7 +282,7 @@ if ($Kurir == null && $Resi == null) {
 			'info' => array(
 				'no_awb' => $DecodeData['bills'][0]['billCode'],
 				'service' => null,
-				'status' => ' | ' . strtoupper($DecodeData['bills'][0]['status']),
+				'status' => strtoupper($DecodeData['bills'][0]['status']),
 				'tanggal_kirim' => date('d-m-Y H:i', strtotime($Tgl_Kirim['acceptTime'])),
 				'tanggal_terima' => date('d-m-Y H:i', strtotime($TanggalTerima)),
 				'harga' => null,
@@ -373,7 +376,7 @@ if ($Kurir == null && $Resi == null) {
 			'info' => array(
 				'no_awb' => $ResponcURL['sicepat']['result']['waybill_number'],
 				'service' => $ResponcURL['sicepat']['result']['service'],
-				'status' => ' | ' . strtoupper($ResponcURL['sicepat']['result']['last_status']['status']),
+				'status' => strtoupper($ResponcURL['sicepat']['result']['last_status']['status']),
 				'tanggal_kirim' => $ResponcURL['sicepat']['result']['send_date'],
 				'tanggal_terima' => $ResponcURL['sicepat']['result']['POD_receiver_time'],
 				'harga' => $ResponcURL['sicepat']['result']['totalprice'],
@@ -468,10 +471,10 @@ if ($Kurir == null && $Resi == null) {
 		$ArrayStatus = reset($ResponcURL['track']);
 
 		if (strpos($ArrayStatus['state'], 'Pengiriman telah berhasil') !== false) {
-			$StatusKirim = ' | DELIVERED';
+			$StatusKirim = 'DELIVERED';
 			$TanggalTerima = $ArrayStatus['times'];
 		} else {
-			$StatusKirim = ' | ON PROCESS';
+			$StatusKirim = 'ON PROCESS';
 			$TanggalTerima = null;
 		}
 
@@ -564,10 +567,10 @@ if ($Kurir == null && $Resi == null) {
 		$ArrayStatus = end($ResponcURL['data']);
 
 		if (strpos($ArrayStatus['StatusInternal'], 'Terkirim') !== false) {
-			$StatusKirim = ' | DELIVERED';
+			$StatusKirim = 'DELIVERED';
 			$TanggalTerima = $ArrayStatus['Tanggal'];
 		} else {
-			$StatusKirim = ' | ON PROCESS';
+			$StatusKirim = 'ON PROCESS';
 			$TanggalTerima = null;
 		}
 
@@ -663,12 +666,12 @@ if ($Kurir == null && $Resi == null) {
 		$ArrayStatus = end($ResponcURL['result']);
 
 		if (strpos($ArrayStatus['description'], 'Diterima') !== false) {
-			$StatusKirim = ' | DELIVERED';
+			$StatusKirim = 'DELIVERED';
 			$TanggalTerima = $ArrayStatus['eventDate'];
 			$NmPenerima = $ArrayStatus['description'];
 			$NamaPenerima = preg_replace('/(.*)PENERIMA \/ KETERANGAN : (.*)/', '$2', $NmPenerima);
 		} else {
-			$StatusKirim = ' | ON PROCESS';
+			$StatusKirim = 'ON PROCESS';
 			$TanggalTerima = null;
 			$NamaPenerima = null;
 		}
@@ -793,9 +796,9 @@ if ($Kurir == null && $Resi == null) {
 	$TanggalKirim = $Tgl_Kirim['time'] / 1000;
 
 	if ($ResponcURL['orders'][0]['status'] == 'Completed') {
-		$StatusKirim = ' | DELIVERED';
+		$StatusKirim = 'DELIVERED';
 	} else {
-		$StatusKirim = ' | ' . strtoupper($ResponcURL['orders'][0]['status']);
+		$StatusKirim = strtoupper($ResponcURL['orders'][0]['status']);
 	}
 
 	$Tgl_Terima = end($ResponcURL['orders'][0]['events']);
