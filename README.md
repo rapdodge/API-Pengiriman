@@ -57,16 +57,17 @@ http(s)://domain_atau.ip/lokasi/skrip/pengiriman.php?kurir=(kurir)&resi=(resi)
 <h3>Jasa pengiriman yang saat ini sudah bisa digunakan:</h3>
 
 ````markdown
-1. AnteAja | anteraja
+1. AnterAja | anteraja
 2. J-Express | jx
 3. JNE | jne
 4. JNT | jnt
-5. NinjaXpress | ninja
-6. Pos Indonesia | pos
-7. SiCepat | sicepat
-8. WAHANA | wahana
+5. Lion Parcel | lionparcel
+6. NinjaXpress | ninja
+7. Pos Indonesia | pos
+8. SiCepat | sicepat
+9. WAHANA | wahana
 
-Selanjutnya: LionParcel [?], TIKI [?]
+Selanjutnya: TIKI [?]
 ````
 
 <hr>
