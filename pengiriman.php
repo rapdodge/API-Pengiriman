@@ -1,8 +1,8 @@
 <?php
 date_default_timezone_set('Asia/Jakarta');
-error_reporting(0);
+//error_reporting(0);
 header('Content-Type: application/json');
-$JasaPengiriman = array('anteraja', 'jx', 'jne', 'jnt', 'ninja', 'pos', 'sicepat', 'wahana');
+$JasaPengiriman = array('anteraja', 'jne', 'jnt', 'jx', 'lionparcel', 'ninja', 'pos', 'sicepat', 'wahana');
 $Kurir = strtolower($_GET['kurir']);
 $Resi = $_GET['resi'];
 
@@ -866,6 +866,117 @@ if ($Kurir == null && $Resi == null) {
 			} else {
 				$Riwayat[$k]['posisi'] = null;
 				$Riwayat[$k]['message'] = $ResponcURL['orders'][0]['events'][$k]['description'];
+			}
+		}
+
+		$HasilRiwayat = array(
+			'history' => $Riwayat,
+		);
+
+		$Hasil = array_merge($CekResi, $Keterangan, $Pengirim, $Penerima, $HasilRiwayat);
+		print_r(json_encode($Hasil));
+	}
+} elseif ($Kurir == 'lionparcel') {
+	if (strpos($Resi, '-') !== false) {
+		$Resi = str_replace('-', '', $Resi);
+	}
+
+	$Resi = substr($Resi, 0, 2) . '-' . substr($Resi, 2);
+	$Resi = substr($Resi, 0, 5) . '-' . substr($Resi, 5);
+
+	$curl = curl_init();
+
+	curl_setopt_array(
+		$curl,
+		array(
+			CURLOPT_URL => "https://algo-api.lionparcel.com/v1/shipment/search?reference=$Resi",
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_ENCODING => "",
+			CURLOPT_MAXREDIRS => 10,
+			CURLOPT_TIMEOUT => 30,
+			CURLOPT_FOLLOWLOCATION => true,
+			CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+			CURLOPT_CUSTOMREQUEST => "GET",
+		)
+	);
+
+	$ResponcURL = json_decode(curl_exec($curl), true);
+
+	curl_close($curl);
+
+	$Tgl_Kirim = end($ResponcURL['histories']);
+	$TanggalKirim = date('d-m-Y H:i', strtotime($Tgl_Kirim['created_at']));
+
+	$Tgl_Terima = reset($ResponcURL['histories']);
+	if (strpos($Tgl_Terima['status'], 'Terkirim') !== false) {
+		$TanggalTerima = date('d-m-Y H:i', strtotime($Tgl_Terima['created_at']));
+		$StatusKirim = 'DELIVERED';
+		$NamaPenerima = $Tgl_Terima['person_name'];
+	} else {
+		$TanggalTerima = 'null';
+		$StatusKirim = strtoupper($Tgl_Terima['status']);
+		$NamaPenerima = 'null';
+	}
+
+	$Harga = array(
+		$ResponcURL['publish_rate'], $ResponcURL['forward_rate'], $ResponcURL['shipping_surcharge_rate'], $ResponcURL['commodity_surcharge_rate'], $ResponcURL['heavy_weight_surcharge_rate'], $ResponcURL['insurance_rate'], $ResponcURL['wood_packing_rate']
+	);
+	$HitungHarga = array_sum($Harga);
+
+	$CekResi = array();
+
+	if ($ResponcURL == null) {
+		$CekResi['name'] = 'LionParcel';
+		$CekResi['site'] = 'lionparcel.com';
+		$CekResi['error'] = true;
+		$CekResi['message'] = 'Nomor resi tidak ditemukan.';
+		print_r(json_encode($CekResi));
+	} else {
+		$CekResi['name'] = 'LionParcel';
+		$CekResi['site'] = 'lionparcel.com';
+		$CekResi['error'] = false;
+		$CekResi['message'] = 'success';
+
+		$Keterangan = array(
+			'info' => array(
+				'no_awb' => $ResponcURL['package_id'],
+				'service' => $ResponcURL['service_type'],
+				'status' => $StatusKirim,
+				'tanggal_kirim' => $TanggalKirim,
+				'tanggal_terima' => $TanggalTerima,
+				'harga' => $HitungHarga,
+				'berat' => $ResponcURL['gross_weight'],
+				'catatan' => null,
+			),
+		);
+
+		$Pengirim = array(
+			'pengirim' => array(
+				'nama' => $ResponcURL['sender']['name'],
+				'phone' => $ResponcURL['sender']['address'],
+				'alamat' => $ResponcURL['sender']['phone'],
+			),
+		);
+
+		$Penerima = array(
+			'penerima' => array(
+				'nama' => $ResponcURL['recipient']['name'],
+				'nama_penerima' => $NamaPenerima,
+				'phone' => $ResponcURL['recipient']['phone'],
+				'alamat' => $ResponcURL['recipient']['address'],
+			),
+		);
+
+		$BalikRiwayat = array_reverse($ResponcURL['histories']);
+		$Riwayat = array();
+		foreach ($BalikRiwayat as $k => $v) {
+			$Riwayat[$k]['tanggal'] = date('d-m-Y H:i', strtotime($BalikRiwayat[$k]['created_at']));
+			if (strpos($BalikRiwayat[$k]['status'], 'Terkirim') !== false) {
+				$Riwayat[$k]['posisi'] = 'DITERIMA';
+				$Riwayat[$k]['message'] = $BalikRiwayat[$k]['long_status'];
+			} else {
+				$Riwayat[$k]['posisi'] = $BalikRiwayat[$k]['city'];
+				$Riwayat[$k]['message'] = $BalikRiwayat[$k]['long_status'];
 			}
 		}
 
