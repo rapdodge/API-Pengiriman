@@ -65,7 +65,8 @@ http(s)://domain_atau.ip/lokasi/skrip/pengiriman.php?kurir=(kurir)&resi=(resi)
 6. NinjaXpress | ninja
 7. Pos Indonesia | pos
 8. SiCepat | sicepat
-9. WAHANA | wahana
+9. TIKI | tiki
+10. WAHANA | wahana
 
 Selanjutnya: TIKI [?]
 ````
