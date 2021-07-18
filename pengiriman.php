@@ -1,8 +1,8 @@
 <?php
 date_default_timezone_set('Asia/Jakarta');
-//error_reporting(0);
+error_reporting(0);
 header('Content-Type: application/json');
-$JasaPengiriman = array('anteraja', 'jne', 'jnt', 'jx', 'lionparcel', 'ninja', 'pos', 'sicepat', 'wahana');
+$JasaPengiriman = array('anteraja', 'jne', 'jnt', 'jx', 'lionparcel', 'ninja', 'pos', 'sicepat', 'tiki', 'wahana');
 $Kurir = strtolower($_GET['kurir']);
 $Resi = $_GET['resi'];
 
@@ -153,7 +153,7 @@ if ($Kurir == null && $Resi == null) {
 	if (strpos($Tgl_Terima['message']['id'], 'Delivery sukses') !== false) {
 		$TanggalTerima = date('d-m-Y H:i', strtotime($Tgl_Terima['timestamp']));
 	} else {
-		$TanggalTerima = 'null';
+		$TanggalTerima = null;
 	}
 
 	if ($ResponcURL['content'][0]['detail']['final_status'] == 250) {
@@ -805,12 +805,12 @@ if ($Kurir == null && $Resi == null) {
 	if (strpos($Tgl_Terima['description'], 'berhasil dikirimkan') !== false) {
 		$TanggalTerima = $Tgl_Terima['time'] / 1000;
 	} else {
-		$TanggalTerima = 'null';
+		$TanggalTerima = null;
 	}
 
 	$CekResi = array();
 
-	if ($ResponcURL == null) {
+	if ($TanggalKirim == null) {
 		$CekResi['name'] = 'NinjaXpress';
 		$CekResi['site'] = 'www.ninjaxpress.co';
 		$CekResi['error'] = true;
@@ -913,9 +913,9 @@ if ($Kurir == null && $Resi == null) {
 		$StatusKirim = 'DELIVERED';
 		$NamaPenerima = $Tgl_Terima['person_name'];
 	} else {
-		$TanggalTerima = 'null';
+		$TanggalTerima = null;
 		$StatusKirim = strtoupper($Tgl_Terima['status']);
-		$NamaPenerima = 'null';
+		$NamaPenerima = null;
 	}
 
 	$Harga = array(
@@ -977,6 +977,136 @@ if ($Kurir == null && $Resi == null) {
 			} else {
 				$Riwayat[$k]['posisi'] = $BalikRiwayat[$k]['city'];
 				$Riwayat[$k]['message'] = $BalikRiwayat[$k]['long_status'];
+			}
+		}
+
+		$HasilRiwayat = array(
+			'history' => $Riwayat,
+		);
+
+		$Hasil = array_merge($CekResi, $Keterangan, $Pengirim, $Penerima, $HasilRiwayat);
+		print_r(json_encode($Hasil));
+	}
+} elseif ($Kurir == 'tiki') {
+	$curl = curl_init();
+
+	curl_setopt_array(
+		$curl,
+		array(
+			CURLOPT_URL => "https://my.tiki.id/api/connote/info",
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_ENCODING => "",
+			CURLOPT_MAXREDIRS => 10,
+			CURLOPT_TIMEOUT => 30,
+			CURLOPT_FOLLOWLOCATION => true,
+			CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+			CURLOPT_CUSTOMREQUEST => "POST",
+			CURLOPT_POSTFIELDS => "cnno=$Resi",
+			CURLOPT_HTTPHEADER => array(
+				"Authorization:  0437fb74-91bd-11e9-a74c-06f2c0b7c6f0-91bf-11e9-a74c-06f2c4b0b602",
+				"Content-Type: application/x-www-form-urlencoded"
+			),
+		)
+	);
+
+	$ResponcURL0 = json_decode(curl_exec($curl), true);
+
+	curl_close($curl);
+
+	$curl = curl_init();
+
+	curl_setopt_array(
+		$curl,
+		array(
+			CURLOPT_URL => "https://my.tiki.id/api/connote/history",
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_ENCODING => "",
+			CURLOPT_MAXREDIRS => 10,
+			CURLOPT_TIMEOUT => 30,
+			CURLOPT_FOLLOWLOCATION => true,
+			CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+			CURLOPT_CUSTOMREQUEST => "POST",
+			CURLOPT_POSTFIELDS => "cnno=$Resi",
+			CURLOPT_HTTPHEADER => array(
+				"Authorization:  0437fb74-91bd-11e9-a74c-06f2c0b7c6f0-91bf-11e9-a74c-06f2c4b0b602",
+				"Content-Type: application/x-www-form-urlencoded"
+			),
+		)
+	);
+
+	$ResponcURL1 = json_decode(curl_exec($curl), true);
+
+	curl_close($curl);
+
+	$Tgl_Kirim = end($ResponcURL1['response'][0]['history']);
+	$TanggalKirim = $Tgl_Kirim['entry_date'];
+
+	$Tgl_Terima = reset($ResponcURL1['response'][0]['history']);
+	if (strpos($Tgl_Terima['noted'], 'Success') !== false) {
+		$TanggalTerima = $Tgl_Terima['entry_date'];
+		$StatusKirim = 'DELIVERED';
+		$NmPenerima = $Tgl_Terima['noted'];
+		$NamaPenerima = preg_replace('/(.*) RECEIVED BY: (.*)/', '$2', $NmPenerima);
+	} else {
+		$TanggalTerima = null;
+		$StatusKirim = 'ON PROCESS';
+		$NamaPenerima = null;
+	}
+
+	$CekResi = array();
+
+	if ($ResponcURL0['response'] == null) {
+		$CekResi['name'] = 'TIKI';
+		$CekResi['site'] = 'tiki.id';
+		$CekResi['error'] = true;
+		$CekResi['message'] = 'Nomor resi tidak ditemukan.';
+		print_r(json_encode($CekResi));
+	} else {
+		$CekResi['name'] = 'TIKI';
+		$CekResi['site'] = 'tiki.id';
+		$CekResi['error'] = false;
+		$CekResi['message'] = 'success';
+
+		$Keterangan = array(
+			'info' => array(
+				'no_awb' => $ResponcURL0['response'][0]['cnno'],
+				'service' => $ResponcURL0['response'][0]['product'],
+				'status' => $StatusKirim,
+				'tanggal_kirim' => date('d-m-Y H:i', strtotime($TanggalKirim)),
+				'tanggal_terima' => date('d-m-Y H:i', strtotime($TanggalTerima)),
+				'harga' => $ResponcURL0['response'][0]['total_fee'],
+				'berat' => $ResponcURL0['response'][0]['weight'],
+				'catatan' => null,
+			),
+		);
+
+		$Pengirim = array(
+			'pengirim' => array(
+				'nama' => $ResponcURL0['response'][0]['consignor_name'],
+				'phone' => null,
+				'alamat' => $ResponcURL0['response'][0]['consignor_address'],
+			),
+		);
+
+		$Penerima = array(
+			'penerima' => array(
+				'nama' => $ResponcURL0['response'][0]['consignee_name'],
+				'nama_penerima' => $NamaPenerima,
+				'phone' => null,
+				'alamat' => $ResponcURL['orders'][0]['consignee_address'],
+			),
+		);
+
+		$BalikRiwayat = array_reverse($ResponcURL1['response'][0]['history']);
+		$Riwayat = array();
+		foreach ($BalikRiwayat as $k => $v) {
+			$Riwayat[$k]['tanggal'] = date('d-m-Y H:i', strtotime($BalikRiwayat[$k]['entry_date']));
+			if (strpos($BalikRiwayat[$k]['noted'], 'Success') !== false) {
+				$Riwayat[$k]['posisi'] = 'DITERIMA';
+				$Riwayat[$k]['message'] = $BalikRiwayat[$k]['noted'];
+			} else {
+				$Riwayat[$k]['posisi'] = $BalikRiwayat[$k]['entry_name'];
+				$Riwayat[$k]['message'] = $BalikRiwayat[$k]['noted'];
 			}
 		}
 
