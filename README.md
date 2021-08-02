@@ -68,7 +68,8 @@ http(s)://domain_atau.ip/lokasi/skrip/pengiriman.php?kurir=(kurir)&resi=(resi)
 9. TIKI | tiki
 10. WAHANA | wahana
 
-Selanjutnya: TIKI [?]
+Selanjutnya: [?]
+Bila ada saran mengenai jasa pengiriman, bisa buka isu baru, dan sertakan tautan API yang bisa diambil dan metode yang digunakan :)
 ````
 
 <hr>
