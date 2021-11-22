@@ -73,6 +73,12 @@ Bila ada saran mengenai jasa pengiriman, bisa buka isu baru, dan sertakan tautan
 ````
 
 <hr>
+<h3>Donasi</h3>
+<details>
+  <summary>Donasi dengan QRIS</summary>
+  <img src="https://github.com/rapdodge/API-Pengiriman/raw/main/.github/QRIS.jpg" style="width:50%;height:50%;">
+</details>
+<hr>
 
 Shield: [![CC BY-NC-SA 4.0][cc-by-nc-sa-shield]][cc-by-nc-sa]
 
