@@ -2,7 +2,7 @@
 date_default_timezone_set('Asia/Jakarta');
 error_reporting(0);
 header('Content-Type: application/json');
-$JasaPengiriman = array('anteraja', 'jnt', 'jx', 'lionparcel', 'ninja', 'pos', 'sicepat', 'tiki', 'wahana');
+$JasaPengiriman = array('anteraja', 'jx', 'lionparcel', 'ninja', 'pos', 'sicepat', 'tiki', 'wahana');
 $Kurir = strtolower($_GET['kurir']);
 $Resi = $_GET['resi'];
 
@@ -125,114 +125,6 @@ if ($Kurir == null && $Resi == null) {
 			} else {
 				$Riwayat[$k]['posisi'] = null;
 				$Riwayat[$k]['message'] = $BalikRiwayat[$k]['message']['id'];
-			}
-		}
-
-		$HasilRiwayat = array(
-			'history' => $Riwayat,
-		);
-
-		$Hasil = array_merge($CekResi, $Keterangan, $Pengirim, $Penerima, $HasilRiwayat);
-		print_r(json_encode($Hasil));
-	}
-} elseif ($Kurir == 'jnt') {
-	$curl = curl_init();
-
-	curl_setopt_array(
-		$curl,
-		array(
-			CURLOPT_URL => "http://jk.jet.co.id:22234/jandt-app-ifd-web/router.do",
-			CURLOPT_RETURNTRANSFER => true,
-			CURLOPT_ENCODING => "",
-			CURLOPT_MAXREDIRS => 10,
-			CURLOPT_TIMEOUT => 30,
-			CURLOPT_FOLLOWLOCATION => true,
-			CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-			CURLOPT_CUSTOMREQUEST => "POST",
-			CURLOPT_POSTFIELDS => array(
-				"method" => "order.massOrderTrack",
-				"format" => "json",
-				"v" => "1.0",
-				"data" => "{\"parameter\":{\"billCodes\":\"$Resi\",\"lang\":\"en\"}}"
-			),
-		)
-	);
-
-	$ResponcURL = json_decode(curl_exec($curl), true);
-
-	curl_close($curl);
-
-	$DecodeData = json_decode($ResponcURL['data'], true);
-	$Tgl_Terima = reset($DecodeData['bills'][0]['details']);
-
-	if ($Tgl_Terima['scanstatus'] == 'Delivered') {
-		$TanggalTerima = $Tgl_Terima['acceptTime'];
-	} else {
-		$TanggalTerima = null;
-	}
-
-	$CekResi = array();
-
-	if ($DecodeData['bills'][0]['details'] == NULL) {
-		$CekResi['name'] = 'JNT';
-		$CekResi['site'] = 'jet.co.id';
-		$CekResi['error'] = true;
-		$CekResi['message'] = 'Nomor resi tidak ditemukan.';
-		print_r(json_encode($CekResi));
-	} else {
-		$CekResi['name'] = 'JNT';
-		$CekResi['site'] = 'jet.co.id';
-		$CekResi['error'] = false;
-		$CekResi['message'] = 'success';
-
-		$Tgl_Kirim = end($DecodeData['bills'][0]['details']);
-
-		$Keterangan = array(
-			'info' => array(
-				'no_awb' => $DecodeData['bills'][0]['billCode'],
-				'service' => null,
-				'status' => strtoupper($DecodeData['bills'][0]['status']),
-				'tanggal_kirim' => date('d-m-Y H:i', strtotime($Tgl_Kirim['acceptTime'])),
-				'tanggal_terima' => date('d-m-Y H:i', strtotime($TanggalTerima)),
-				'harga' => null,
-				'berat' => null,
-				'catatan' => null,
-			),
-		);
-
-		$Pengirim = array(
-			'pengirim' => array(
-				'nama' => null,
-				'phone' => null,
-				'alamat' => null,
-			),
-		);
-
-		$Penerima = array(
-			'penerima' => array(
-				'nama' => null,
-				'nama_penerima' => null,
-				'phone' => null,
-				'alamat' => null,
-			),
-		);
-
-		$BalikRiwayat = array_reverse($DecodeData['bills'][0]['details']);
-		$Riwayat = array();
-		foreach ($BalikRiwayat as $k => $v) {
-			$Riwayat[$k]['tanggal'] = date('d-m-Y H:i', strtotime($BalikRiwayat[$k]['acceptTime']));
-			if ($BalikRiwayat[$k]['scanstatus'] == 'Delivered') {
-				$Riwayat[$k]['posisi'] = $BalikRiwayat[$k]['city'];
-				$Riwayat[$k]['message'] = 'DELIVERED';
-			} elseif ($BalikRiwayat[$k]['scanstatus'] == 'On Delivery') {
-				$Riwayat[$k]['posisi'] = $BalikRiwayat[$k]['city'];
-				$Riwayat[$k]['message'] = strtoupper($BalikRiwayat[$k]['scanstatus']);
-			} elseif ($BalikRiwayat[$k]['scanstatus'] == 'Departed') {
-				$Riwayat[$k]['posisi'] = $BalikRiwayat[$k]['city'];
-				$Riwayat[$k]['message'] = strtoupper($BalikRiwayat[$k]['scanstatus']);
-			} else {
-				$Riwayat[$k]['posisi'] = $BalikRiwayat[$k]['city'];
-				$Riwayat[$k]['message'] = strtoupper($BalikRiwayat[$k]['scanstatus']) . ' AT ' . strtoupper($BalikRiwayat[$k]['siteName']);
 			}
 		}
 
