@@ -59,14 +59,12 @@ http(s)://domain_atau.ip/lokasi/skrip/pengiriman.php?kurir=(kurir)&resi=(resi)
 ````markdown
 1. AnterAja | anteraja
 2. J-Express | jx
-3. JNE | jne
-4. JNT | jnt
-5. Lion Parcel | lionparcel
-6. NinjaXpress | ninja
-7. Pos Indonesia | pos
-8. SiCepat | sicepat
-9. TIKI | tiki
-10. WAHANA | wahana
+3. Lion Parcel | lionparcel
+4. NinjaXpress | ninja
+5. Pos Indonesia | pos
+6. SiCepat | sicepat
+7. TIKI | tiki
+8. WAHANA | wahana
 
 Selanjutnya: [?]
 Bila ada saran mengenai jasa pengiriman, bisa buka isu baru, dan sertakan tautan API yang bisa diambil dan metode yang digunakan :)
