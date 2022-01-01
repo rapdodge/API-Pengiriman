@@ -64,7 +64,19 @@ http(s)://domain_atau.ip/lokasi/skrip/pengiriman.php?kurir=(kurir)&resi=(resi)
 5. TIKI | tiki
 
 Selanjutnya: [?]
-Bila ada saran mengenai jasa pengiriman, bisa buka isu baru, dan sertakan tautan API yang bisa diambil dan metode yang digunakan :)
+````
+
+<h3>Jasa pengiriman yang saat ini sudah tidak bisa digunakan:</h3>
+
+````markdown
+1. J-Express
+2. JNE
+3. JNT
+4. Lion Parcel
+5. WAHANA
+
+Selanjutnya: [?] (hanya pengelola API jasa pengiriman yang bersangkutan, dan Tuhan yang tahu)
+Bila ada saran mengenai jasa pengiriman, bisa buka isu baru, dan sertakan tautan API yang bisa diambil dan metode yang digunakan, barangkali bisa diimplementasikan :)
 ````
 
 <hr>
